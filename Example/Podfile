@@ -1,0 +1,11 @@
+use_frameworks!
+
+target 'MSXLFormValidationPopup_Example' do
+  pod 'MSXLFormValidationPopup', :path => '../'
+
+  target 'MSXLFormValidationPopup_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end
