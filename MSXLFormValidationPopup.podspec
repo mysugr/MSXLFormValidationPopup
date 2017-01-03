@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'MSXLFormValidationPopup'
-  s.version          = '0.1.0'
+  s.version          = '0.2.0'
   s.summary          = 'A little validation popup for your XLForms.'
   s.description      = <<-DESC
 A small add-on for XLForm that shows a validation popup with error information on top of fields.
