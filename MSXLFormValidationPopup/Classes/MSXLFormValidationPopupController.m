@@ -11,18 +11,6 @@
 #import "MSXLFormValidationPopoverBackgroundView.h"
 
 
-#import <JGMethodSwizzler/JGMethodSwizzler.h>
-
-
-
-
-@implementation XLFormViewController (PrivateExtensions)
-
--(void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
-    // a no-op implementation to allow for swizzling. This method is not implemented by XLFormViewController, so swizzling would fail.
-}
-
-@end
 
 
 
@@ -50,127 +38,22 @@
 #pragma mark Lifecycle
 
 -(instancetype)init {
-    NSAssert(NO, @"Use -initWithFormViewController:");
-    return nil;
-}
-
--(instancetype)initWithFormViewController:(XLFormViewController *__weak)formViewController {
     self = [super init];
     if (self) {
         self.editingRowDescriptors = [NSMutableArray array];
-        self.formViewController = formViewController;
-        
         self.maximumScrollOffset = 88.f;
     }
     return self;
 }
 
--(void)setFormViewController:(XLFormViewController *)formViewController {
-    
-    if (formViewController == _formViewController) {
-        return;
-    }
-    
-    //
-    // Some cleanup
-    
-    [self.editingRowDescriptors removeAllObjects];
-    
-    if (_formViewController != nil) {
-        @try { [_formViewController deswizzle]; } @catch (NSException* e) { NSLog(@"Failed to deswizzle: %@", e); }
-        @try { [_formViewController.tableView removeObserver:self forKeyPath:NSStringFromSelector(@selector(contentOffset))]; } @catch (NSException* e) { NSLog(@"Failed to remove observer: %@", e); }
-        @try { [_formViewController removeObserver:self forKeyPath:NSStringFromSelector(@selector(presentedViewController))]; } @catch (NSException* e) { NSLog(@"Failed to remove observer: %@", e); }
-    }
-    
-    
-    //
-    // Observe and swizzle
-    
-    _formViewController = formViewController;
-    
-    if (_formViewController == nil) {
-        return;
-    }
-    
-    [_formViewController addObserver:self forKeyPath:NSStringFromSelector(@selector(presentedViewController)) options:NSKeyValueObservingOptionNew context:NULL];
-    [_formViewController.tableView addObserver:self forKeyPath:NSStringFromSelector(@selector(contentOffset)) options:NSKeyValueObservingOptionNew context:NULL];
-    
-    typeof(self) __weak weakSelf = self;
-    [_formViewController swizzleMethod:@selector(beginEditing:) withReplacement:JGMethodReplacementProviderBlock {
-        return JGMethodReplacement(void, XLFormViewController*, XLFormRowDescriptor* row) {
-            JGOriginalImplementation(void, row);
-            [weakSelf beginEditing:row];
-        };
-    }];
-    [_formViewController swizzleMethod:@selector(endEditing:) withReplacement:JGMethodReplacementProviderBlock {
-        return JGMethodReplacement(void, XLFormViewController*, XLFormRowDescriptor* row) {
-            JGOriginalImplementation(void, row);
-            [weakSelf endEditing:row];
-        };
-    }];
-    [_formViewController swizzleMethod:@selector(formRowDescriptorValueHasChanged:oldValue:newValue:) withReplacement:JGMethodReplacementProviderBlock {
-        return JGMethodReplacement(void, XLFormViewController*, XLFormRowDescriptor* row, id oldValue, id newValue) {
-            JGOriginalImplementation(void, row, oldValue, newValue);
-            [weakSelf formRowDescriptorValueHasChanged:row oldValue:oldValue newValue:newValue];
-        };
-    }];
-    [_formViewController swizzleMethod:@selector(viewDidAppear:) withReplacement:JGMethodReplacementProviderBlock {
-        return JGMethodReplacement(void, XLFormViewController*, BOOL animated) {
-            JGOriginalImplementation(void, animated);
-            [weakSelf viewDidAppear:animated];
-        };
-    }];
-    [_formViewController swizzleMethod:@selector(viewWillDisappear:) withReplacement:JGMethodReplacementProviderBlock {
-        return JGMethodReplacement(void, XLFormViewController*, BOOL animated) {
-            JGOriginalImplementation(void, animated);
-            [weakSelf viewWillDisappear:animated];
-        };
-    }];
-    [_formViewController swizzleMethod:@selector(didSelectFormRow:) withReplacement:JGMethodReplacementProviderBlock {
-        return JGMethodReplacement(void, XLFormViewController*, XLFormRowDescriptor* row) {
-            JGOriginalImplementation(void, row);
-            [weakSelf didSelectFormRow:row];
-        };
-    }];
-    [_formViewController swizzleMethod:@selector(viewWillTransitionToSize:withTransitionCoordinator:) withReplacement:JGMethodReplacementProviderBlock {
-        return JGMethodReplacement(void, XLFormViewController*, CGSize size, id<UIViewControllerTransitionCoordinator> coordinator) {
-            JGOriginalImplementation(void, size, coordinator);
-            [weakSelf viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
-        };
-    }];
-}
-
--(void)dealloc {
-    _formViewController = nil;
-}
 
 
 
+#pragma mark UIViewController method forwarding
 
-#pragma mark KVO
+-(void)formViewController:(XLFormViewController*)formViewController beginEditing:(XLFormRowDescriptor*)row {
+    NSParameterAssert(formViewController != nil);
 
--(void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSString *,id> *)change context:(void *)context {
-    if (object == self.formViewController) {
-        if ([NSStringFromSelector(@selector(presentedViewController)) isEqualToString:keyPath]) {
-            // If a popover or another view controller is being presented, we remove the validation popup
-            [self hideValidationPopupAnimated:NO];
-            return;
-        }
-    }
-    if (object == self.formViewController.tableView) {
-        if ([NSStringFromSelector(@selector(contentOffset)) isEqualToString:keyPath]) {
-            // observe scrolling
-            [self formTableViewDidScroll:self.formViewController.tableView];
-            return;
-        }
-    }
-    [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
-}
-
-
-#pragma mark Swizzled XLFormViewController methods
-
--(void)beginEditing:(XLFormRowDescriptor*)row {
     self.lastEditingRowDescriptor = row;
     if (row != nil) {
         [self.editingRowDescriptors addObject:row];
@@ -182,51 +65,77 @@
     XLFormValidationStatus* validationStatus = [self validationStatusForRow:row];
     if (validationStatus != nil) {
         if (rowValue != nil && rowValue != [NSNull null] && ![@"" isEqualToString:rowValue]) {
-            [self showValidationPopupForStatus:validationStatus forceRefresh:NO];
+            [self showValidationPopupForStatus:validationStatus inFormViewController:formViewController forceRefresh:NO];
         } else if (![self isValidationStatus:self.validationMessageViewController.validationStatus equalTo:validationStatus]) {
             [self hideValidationPopupAnimated:YES];
         }
     }
 }
 
--(void)endEditing:(XLFormRowDescriptor*)row {
+-(void)formViewController:(XLFormViewController*)formViewController endEditing:(XLFormRowDescriptor*)row {
+    NSParameterAssert(formViewController != nil);
+
     if (row == self.lastEditingRowDescriptor) {
         self.lastEditingRowDescriptor = nil;
     }
     [self.editingRowDescriptors removeObject:row];
-    [self updateValidationPopupForRow:row];
+    [self updateValidationPopupForRow:row inFormViewController:formViewController];
 }
 
--(void)formRowDescriptorValueHasChanged:(XLFormRowDescriptor*)formRow oldValue:(id)oldValue newValue:(id)newValue {
+-(void)formViewController:(XLFormViewController*)formViewController formRowDescriptorValueHasChanged:(XLFormRowDescriptor*)formRow oldValue:(id)oldValue newValue:(id)newValue {
+    NSParameterAssert(formViewController != nil);
+    
     if ([self.editingRowDescriptors containsObject:formRow]) {
         [self hideValidationPopupForRow:formRow forced:NO];
     } else if ([formRow.rowType isEqualToString:XLFormRowDescriptorTypeSlider]) {
-        [self updateValidationPopupForRow:formRow];
+        [self updateValidationPopupForRow:formRow inFormViewController:formViewController];
     }
 }
 
--(void)viewDidAppear:(BOOL)animated {
+-(void)formViewController:(XLFormViewController*)formViewController viewDidAppear:(BOOL)animated {
+    NSParameterAssert(formViewController != nil);
+
     if (self.lastEditingRowDescriptor != nil) {
-        [self updateValidationPopupForRow:self.lastEditingRowDescriptor];
+        [self updateValidationPopupForRow:self.lastEditingRowDescriptor inFormViewController:formViewController];
     }
 }
 
--(void)viewWillDisappear:(BOOL)animated {
+-(void)formViewController:(XLFormViewController*)formViewController viewWillDisappear:(BOOL)animated {
+    NSParameterAssert(formViewController != nil);
     [self hideValidationPopupAnimated:YES];
 }
 
--(void)didSelectFormRow:(XLFormRowDescriptor*)row {
+-(void)formViewController:(XLFormViewController*)formViewController didSelectFormRow:(XLFormRowDescriptor*)row {
+    NSParameterAssert(formViewController != nil);
     self.lastEditingRowDescriptor = row;
 }
 
--(void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
+-(void)formViewController:(XLFormViewController*)formViewController viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
+    NSParameterAssert(formViewController != nil);
+    
     if (self.validationMessageViewController != nil) {
         XLFormValidationStatus *status = self.validationMessageViewController.validationStatus;
         [self hideValidationPopupAnimated:NO];
         [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext>  _Nonnull context) {
         } completion:^(id<UIViewControllerTransitionCoordinatorContext>  _Nonnull context) {
-            [self showValidationPopupForStatus:status forceRefresh:YES];
+            [self showValidationPopupForStatus:status inFormViewController:formViewController forceRefresh:YES];
         }];
+    }
+}
+
+-(void)formViewController:(XLFormViewController*)formViewController scrollViewDidScroll:(UIScrollView*)scrollView {
+    NSParameterAssert(formViewController != nil);
+    
+    if (self.validationMessageViewController != nil && self.maximumScrollOffset >= 0) {
+        // scroll popover
+        CGRect rect = self.validationMessageViewController.popoverPresentationController.containerView.frame;
+        rect.origin.y += self.validationMessageViewControllerOffset - scrollView.contentOffset.y;
+        self.validationMessageViewControllerOffset = scrollView.contentOffset.y;
+        self.validationMessageViewController.popoverPresentationController.containerView.frame = rect;
+        
+        if (fabs(self.validationMessageViewControllerOffset - self.validationMessageViewControllerInitialOffset) > self.maximumScrollOffset) {
+            [self hideValidationPopupAnimated:YES];
+        }
     }
 }
 
@@ -235,29 +144,28 @@
 
 #pragma mark show/hide/update
 
--(void)updateValidationPopupForRow:(XLFormRowDescriptor *)formRow {
+-(void)updateValidationPopupForRow:(XLFormRowDescriptor *)formRow inFormViewController:(XLFormViewController *)formViewController {
     XLFormValidationStatus *validationStatus = [self validationStatusForRow:formRow];
     if (validationStatus != nil) {
-        [self showValidationPopupForStatus:validationStatus];
+        [self showValidationPopupForStatus:validationStatus inFormViewController:formViewController];
     } else if ([self.validationMessageViewController.validationStatus.rowDescriptor isEqual:formRow]){
         [self hideValidationPopupAnimated:YES];
     }
 }
 
--(void)showValidationPopupForStatus:(XLFormValidationStatus *)status {
-    [self showValidationPopupForStatus:status forceRefresh:NO];
+-(void)showValidationPopupForStatus:(XLFormValidationStatus *)status inFormViewController:(XLFormViewController *)formViewController {
+    [self showValidationPopupForStatus:status inFormViewController:formViewController forceRefresh:NO];
 }
 
--(void)showValidationPopupForStatus:(XLFormValidationStatus *)status forceRefresh:(BOOL)forceRefresh {
-    
-    UITableViewCell *cell = [status.rowDescriptor cellForFormController:self.formViewController];
+-(void)showValidationPopupForStatus:(XLFormValidationStatus *)status inFormViewController:(XLFormViewController *)formViewController forceRefresh:(BOOL)forceRefresh {
+    UITableViewCell *cell = [status.rowDescriptor cellForFormController:formViewController];
     
     if (self.validationMessageViewController != nil) {
         if (   forceRefresh
             || ![self isValidationStatus:self.validationMessageViewController.validationStatus equalTo:status]
             || self.validationMessageViewController.popoverPresentationController.sourceView != [self popoverSourceViewForCell:cell]) {
             [self hideValidationPopupAnimated:NO completion:^{
-                [self showValidationPopupForStatus:status];
+                [self showValidationPopupForStatus:status inFormViewController:formViewController];
             }];
             return;
         } else {
@@ -266,16 +174,16 @@
         }
     }
     
-    UIViewController<MSXLFormValidationMessageViewController> *viewController = [self validationMessageViewControllerForStatus:status];
+    UIViewController<MSXLFormValidationMessageViewController> *viewController = [self validationMessageViewControllerForStatus:status inFormViewController:formViewController];
     [viewController.view addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(validationMessageViewControllerTapped:)]];
     viewController.modalPresentationStyle = UIModalPresentationPopover;
     
     UIPopoverPresentationController* popoverPC = viewController.popoverPresentationController;
     popoverPC.delegate = self;
-    popoverPC.sourceView = [self popoverSourceViewForCell:[status.rowDescriptor cellForFormController:self.formViewController]];
+    popoverPC.sourceView = [self popoverSourceViewForCell:[status.rowDescriptor cellForFormController:formViewController]];
     popoverPC.sourceRect = popoverPC.sourceView.bounds;
     popoverPC.permittedArrowDirections = UIPopoverArrowDirectionDown;
-    popoverPC.passthroughViews = @[self.formViewController.view];
+    popoverPC.passthroughViews = @[formViewController.view];
     popoverPC.backgroundColor = [UIColor greenColor];
     popoverPC.popoverBackgroundViewClass = [viewController isKindOfClass:MSXLFormValidationPopupViewController.class]
         ? MSXLFormValidationPopoverBackgroundView.class
@@ -287,7 +195,7 @@
 
     self.validationMessageViewController = viewController;
     
-    [(self.formViewController.navigationController ?: self.formViewController) presentViewController:viewController animated:NO completion:^{
+    [(formViewController.navigationController ?: formViewController) presentViewController:viewController animated:NO completion:^{
         for (UIView* view in popoverPC.containerView.subviews) {
             if ([NSStringFromClass(view.class) rangeOfString:@"Mirror"].location != NSNotFound) {
                 [view removeFromSuperview];
@@ -301,7 +209,7 @@
         }];
         
         self.validationMessageViewControllerOffset =
-        self.validationMessageViewControllerInitialOffset = self.formViewController.tableView.contentOffset.y;
+        self.validationMessageViewControllerInitialOffset = formViewController.tableView.contentOffset.y;
     }];
 }
 
@@ -358,13 +266,13 @@
     return cell;
 }
 
--(UIViewController<MSXLFormValidationMessageViewController>*)validationMessageViewControllerForStatus:(XLFormValidationStatus*)status {
+-(UIViewController<MSXLFormValidationMessageViewController>*)validationMessageViewControllerForStatus:(XLFormValidationStatus*)status inFormViewController:(XLFormViewController *)formViewController {
     UIViewController<MSXLFormValidationMessageViewController>* vc = [self.delegate respondsToSelector:@selector(validationPopupController:messageViewControllerForValidationStatus:)]
         ? [self.delegate validationPopupController:self messageViewControllerForValidationStatus:status]
         : nil;
     if (vc == nil) {
         MSXLFormValidationPopupViewController *validationPVC = [[MSXLFormValidationPopupViewController alloc] init];
-        validationPVC.minimumSize = CGSizeMake(self.formViewController.tableView.bounds.size.width, 44.f); // there is no way to determine that magic number.
+        validationPVC.minimumSize = CGSizeMake(formViewController.tableView.bounds.size.width, 44.f); // there is no way to determine that magic number.
         vc = validationPVC;
     }
     vc.validationStatus = status;
@@ -377,22 +285,6 @@
 -(void)validationMessageViewControllerTapped:(UITapGestureRecognizer*)tapGestureRecognizer {
     [self hideValidationPopupAnimated:YES];
 }
-
-
--(void)formTableViewDidScroll:(UITableView*)tableView {
-    if (self.validationMessageViewController != nil && self.maximumScrollOffset >= 0) {
-        // scroll popover
-        CGRect rect = self.validationMessageViewController.popoverPresentationController.containerView.frame;
-        rect.origin.y += self.validationMessageViewControllerOffset - tableView.contentOffset.y;
-        self.validationMessageViewControllerOffset = tableView.contentOffset.y;
-        self.validationMessageViewController.popoverPresentationController.containerView.frame = rect;
-        
-        if (fabs(self.validationMessageViewControllerOffset - self.validationMessageViewControllerInitialOffset) > self.maximumScrollOffset) {
-            [self hideValidationPopupAnimated:YES];
-        }
-    }
-}
-
 
 
 

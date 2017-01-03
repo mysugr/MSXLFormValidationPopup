@@ -89,18 +89,6 @@
 @interface MSXLFormValidationPopupController : NSObject
 
 /**
- Initialize a popup controller.
- @param formViewController an |XLFormViewController| that this popup controller will be bound to.
- */
--(instancetype _Nonnull)initWithFormViewController:(__unsafe_unretained XLFormViewController * _Nonnull)formViewController NS_DESIGNATED_INITIALIZER;
-
-/**
- The form view controller that this popup controller is bound to. This should be set to nil
- when the form view controller is being deallocated.
- */
-@property (nonatomic, unsafe_unretained) XLFormViewController *formViewController;
-
-/**
  The delegate for this popup controller.
  */
 @property (nonatomic, weak, nullable) NSObject<MSXLFormValidationPopupControllerDelegate>* delegate;
@@ -116,11 +104,25 @@
  Enforces display of a validation popup for the given status. If it's already displayed, nothing will change.
  If a popup for a different validation status is shown, that one will disappear first.
  */
--(void)showValidationPopupForStatus:(XLFormValidationStatus * _Nonnull)status;
+-(void)showValidationPopupForStatus:(XLFormValidationStatus * _Nonnull)status inFormViewController:(XLFormViewController * _Nonnull)formViewController;
 
 /**
  Enforces hiding of a currently displayed validation popup.
  */
 -(void)hideValidationPopupAnimated:(BOOL)animated;
+
+
+/**
+ Forward methods for the hosting view controller. All the methods should be forwarded from the XLFormViewController, after doing any custom actions.
+ */
+
+-(void)formViewController:(XLFormViewController * _Nonnull)formViewController beginEditing:(XLFormRowDescriptor * _Nonnull)row;
+-(void)formViewController:(XLFormViewController * _Nonnull)formViewController endEditing:(XLFormRowDescriptor * _Nonnull)row;
+-(void)formViewController:(XLFormViewController * _Nonnull)formViewController formRowDescriptorValueHasChanged:(XLFormRowDescriptor * _Nonnull)formRow oldValue:(id _Nullable)oldValue newValue:(id _Nullable)newValue;
+-(void)formViewController:(XLFormViewController * _Nonnull)formViewController viewDidAppear:(BOOL)animated;
+-(void)formViewController:(XLFormViewController * _Nonnull)formViewController viewWillDisappear:(BOOL)animated;
+-(void)formViewController:(XLFormViewController * _Nonnull)formViewController didSelectFormRow:(XLFormRowDescriptor * _Nonnull)row;
+-(void)formViewController:(XLFormViewController * _Nonnull)formViewController viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator> _Nonnull)coordinator;
+-(void)formViewController:(XLFormViewController * _Nonnull)formViewController scrollViewDidScroll:(UIScrollView * _Nonnull)scrollView;
 
 @end

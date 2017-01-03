@@ -17,6 +17,5 @@ A small add-on for XLForm that shows a validation popup with error information o
   s.source_files = 'MSXLFormValidationPopup/Classes/*.{h,m}'
 
   s.dependency 'XLForm', '3.2.0'
-  s.dependency 'JGMethodSwizzler', '2.0.1'
   
 end

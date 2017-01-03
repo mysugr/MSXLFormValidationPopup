@@ -155,7 +155,7 @@
     self.form = form;
     self.form.endEditingTableViewOnScroll = NO;
     
-    self.validationPopup = [[MSXLFormValidationPopupController alloc] initWithFormViewController:self];
+    self.validationPopup = [[MSXLFormValidationPopupController alloc] init];
     self.validationPopup.delegate = self;
     
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(doneButtonTapped:)];
@@ -170,7 +170,7 @@
     if (firstValidationStatus == nil) {
         [[[UIAlertView alloc] initWithTitle:@"No errors!" message:nil delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil] show];
     } else {
-        [self.validationPopup showValidationPopupForStatus:firstValidationStatus];
+        [self.validationPopup showValidationPopupForStatus:firstValidationStatus inFormViewController:self];
     }
 }
 
@@ -185,6 +185,49 @@
     }
     return nil;
 }
+
+
+#pragma mark Validation popup method forwarding
+
+-(void)beginEditing:(XLFormRowDescriptor *)rowDescriptor {
+    [super beginEditing:rowDescriptor];
+    [self.validationPopup formViewController:self beginEditing:rowDescriptor];
+}
+
+-(void)endEditing:(XLFormRowDescriptor *)rowDescriptor {
+    [super endEditing:rowDescriptor];
+    [self.validationPopup formViewController:self endEditing:rowDescriptor];
+}
+
+-(void)formRowDescriptorValueHasChanged:(XLFormRowDescriptor *)formRow oldValue:(id)oldValue newValue:(id)newValue {
+    [super formRowDescriptorValueHasChanged:formRow oldValue:oldValue newValue:newValue];
+    [self.validationPopup formViewController:self formRowDescriptorValueHasChanged:formRow oldValue:oldValue newValue:newValue];
+}
+
+-(void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    [self.validationPopup formViewController:self viewDidAppear:animated];
+}
+
+-(void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    [self.validationPopup formViewController:self viewWillDisappear:animated];
+}
+
+-(void)didSelectFormRow:(XLFormRowDescriptor *)formRow {
+    [super didSelectFormRow:formRow];
+    [self.validationPopup formViewController:self didSelectFormRow:formRow];
+}
+
+-(void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
+    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
+    [self.validationPopup formViewController:self viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
+}
+
+-(void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    [self.validationPopup formViewController:self scrollViewDidScroll:scrollView];
+}
+
 
 #pragma mark MSXLFormValidationPopupControllerDelegate
 
