@@ -174,6 +174,11 @@
         }
     }
     
+    if (formViewController.parentViewController == nil) {
+        // Form is not shown - so we do nothing
+        return;
+    }
+
     UIViewController<MSXLFormValidationMessageViewController> *viewController = [self validationMessageViewControllerForStatus:status inFormViewController:formViewController];
     [viewController.view addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(validationMessageViewControllerTapped:)]];
     viewController.modalPresentationStyle = UIModalPresentationPopover;
