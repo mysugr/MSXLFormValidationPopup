@@ -188,7 +188,7 @@
     popoverPC.sourceView = [self popoverSourceViewForCell:[status.rowDescriptor cellForFormController:formViewController]];
     popoverPC.sourceRect = popoverPC.sourceView.bounds;
     popoverPC.permittedArrowDirections = UIPopoverArrowDirectionDown;
-    popoverPC.passthroughViews = @[formViewController.view];
+    popoverPC.passthroughViews = nil;
     popoverPC.backgroundColor = [UIColor greenColor];
     popoverPC.popoverBackgroundViewClass = [viewController isKindOfClass:MSXLFormValidationPopupViewController.class]
         ? MSXLFormValidationPopoverBackgroundView.class
@@ -344,6 +344,10 @@
         [self.delegate validationPopupController:self willPresentValidationMessageViewController:self.validationMessageViewController inPopoverPresentationController:popoverPresentationController];
     }
     popoverPresentationController.containerView.alpha = 0;
+}
+
+-(void)popoverPresentationControllerDidDismissPopover:(UIPopoverPresentationController *)popoverPresentationController {
+    self.validationMessageViewController = nil;
 }
 
 @end
