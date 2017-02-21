@@ -42,11 +42,27 @@
     if (self) {
         self.editingRowDescriptors = [NSMutableArray array];
         self.maximumScrollOffset = 88.f;
+        self.active = YES;
     }
     return self;
 }
 
 
+
+#pragma mark Activation
+
+@synthesize active = _active;
+
+-(void)setActive:(BOOL)active {
+    _active = active;
+    if (!_active) {
+        [self hideValidationPopupAnimated:NO];
+    }
+}
+
+-(BOOL)isActive {
+    return _active;
+}
 
 
 #pragma mark UIViewController method forwarding
@@ -94,7 +110,9 @@
 
 -(void)formViewController:(XLFormViewController*)formViewController viewDidAppear:(BOOL)animated {
     NSParameterAssert(formViewController != nil);
-
+    
+    self.active = YES;
+    
     if (self.lastEditingRowDescriptor != nil) {
         [self updateValidationPopupForRow:self.lastEditingRowDescriptor inFormViewController:formViewController];
     }
@@ -102,7 +120,8 @@
 
 -(void)formViewController:(XLFormViewController*)formViewController viewWillDisappear:(BOOL)animated {
     NSParameterAssert(formViewController != nil);
-    [self hideValidationPopupAnimated:YES];
+    
+    self.active = NO;
 }
 
 -(void)formViewController:(XLFormViewController*)formViewController didSelectFormRow:(XLFormRowDescriptor*)row {
@@ -158,6 +177,11 @@
 }
 
 -(void)showValidationPopupForStatus:(XLFormValidationStatus *)status inFormViewController:(XLFormViewController *)formViewController forceRefresh:(BOOL)forceRefresh {
+    
+    if (!self.isActive) {
+        return;
+    }
+    
     UITableViewCell *cell = [status.rowDescriptor cellForFormController:formViewController];
     
     if (self.validationMessageViewController != nil) {

@@ -89,6 +89,12 @@
 @interface MSXLFormValidationPopupController : NSObject
 
 /**
+ A simple flag to activate / deactivate the popup. If set to NO, the controller will never show a popup.
+ It's YES by default.
+ */
+@property (nonatomic, assign, getter=isActive) BOOL active;
+
+/**
  The delegate for this popup controller.
  */
 @property (nonatomic, weak, nullable) NSObject<MSXLFormValidationPopupControllerDelegate>* delegate;
