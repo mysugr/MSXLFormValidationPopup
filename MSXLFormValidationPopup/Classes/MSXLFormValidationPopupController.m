@@ -301,7 +301,13 @@
         : nil;
     if (vc == nil) {
         MSXLFormValidationPopupViewController *validationPVC = [[MSXLFormValidationPopupViewController alloc] init];
-        validationPVC.minimumSize = CGSizeMake(formViewController.tableView.bounds.size.width, 44.f); // there is no way to determine that magic number.
+        CGFloat width = formViewController.tableView.bounds.size.width;
+        if ([formViewController.tableView respondsToSelector:@selector(safeAreaLayoutGuide)]) {
+            CGFloat safeAreaWidth = formViewController.tableView.safeAreaLayoutGuide.layoutFrame.size.width;
+            width = MIN(width, safeAreaWidth);
+            validationPVC.maximumSize = CGSizeMake(width, UIViewNoIntrinsicMetric);
+        }
+        validationPVC.minimumSize = CGSizeMake(width, 44.f); // there is no way to determine that magic number.
         vc = validationPVC;
     }
     vc.validationStatus = status;

@@ -23,4 +23,10 @@
  */
 @property (nonatomic, assign) CGSize minimumSize;
 
+/**
+ The maximum size that this view controller users for its |preferredContentSize| attribute. Use this
+ to constrain the size, e.g. to fit into a safe area on iOS 11.
+ */
+@property (nonatomic, assign) CGSize maximumSize;
+
 @end

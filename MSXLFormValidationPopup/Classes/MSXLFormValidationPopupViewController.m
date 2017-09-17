@@ -55,8 +55,9 @@
 }
 
 -(void)viewWillLayoutSubviews {
-    self.label.preferredMaxLayoutWidth = self.view.bounds.size.width - kLabelPaddingLeft - kLabelPaddingRight;
-    CGSize labelSize = [self.label sizeThatFits:CGSizeMake(self.view.bounds.size.width - kLabelPaddingLeft - kLabelPaddingRight, CGFLOAT_MAX)];
+    CGFloat labelWidth = MIN(self.maximumSize.width, self.view.bounds.size.width) - kLabelPaddingLeft - kLabelPaddingRight;
+    self.label.preferredMaxLayoutWidth = labelWidth;
+    CGSize labelSize = [self.label sizeThatFits:CGSizeMake(labelWidth, CGFLOAT_MAX)];
     CGSize computedContentSize = CGSizeMake(MAX(self.minimumSize.width, labelSize.width + kLabelPaddingLeft + kLabelPaddingRight),
                                             MAX(self.minimumSize.height, labelSize.height + kLabelPaddingTop + kLabelPaddingBottom));
     self.preferredContentSize = computedContentSize;
