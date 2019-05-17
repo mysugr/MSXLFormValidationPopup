@@ -168,7 +168,10 @@
 -(void)doneButtonTapped:(id)sender {
     XLFormValidationStatus *firstValidationStatus = [self firstValidationStatus];
     if (firstValidationStatus == nil) {
-        [[[UIAlertView alloc] initWithTitle:@"No errors!" message:nil delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil] show];
+		UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"No errors!" message:nil preferredStyle:UIAlertControllerStyleAlert];
+		[alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+		
+		[self presentViewController:alertController animated:YES completion:nil];
     } else {
         [self.validationPopup showValidationPopupForStatus:firstValidationStatus inFormViewController:self];
     }
