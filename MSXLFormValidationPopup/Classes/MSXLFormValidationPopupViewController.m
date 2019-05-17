@@ -18,7 +18,7 @@
 
 @interface MSXLFormValidationPopupViewController ()
 
-@property (nonatomic, strong) UILabel* label;
+@property (nonatomic, strong, readwrite) UILabel *textLabel;
 
 @end
 
@@ -36,7 +36,7 @@
     label.text = self.validationStatus.msg;
     label.textColor = [UIColor whiteColor];
     [self.view addSubview:label];
-    self.label = label;
+    self.textLabel = label;
     
     [self.view addConstraints:@[
         [NSLayoutConstraint constraintWithItem:label attribute:NSLayoutAttributeTop relatedBy:NSLayoutRelationEqual toItem:self.view attribute:NSLayoutAttributeTop multiplier:1 constant:kLabelPaddingTop],
@@ -48,7 +48,7 @@
 
 -(void)setValidationStatus:(XLFormValidationStatus *)validationStatus {
     _validationStatus = validationStatus;
-    self.label.text = _validationStatus.msg;
+    self.textLabel.text = _validationStatus.msg;
     
     [self.view setNeedsLayout];
     [self.view layoutIfNeeded];
@@ -56,8 +56,8 @@
 
 -(void)viewWillLayoutSubviews {
     CGFloat labelWidth = MIN(self.maximumSize.width, self.view.bounds.size.width) - kLabelPaddingLeft - kLabelPaddingRight;
-    self.label.preferredMaxLayoutWidth = labelWidth;
-    CGSize labelSize = [self.label sizeThatFits:CGSizeMake(labelWidth, CGFLOAT_MAX)];
+    self.textLabel.preferredMaxLayoutWidth = labelWidth;
+    CGSize labelSize = [self.textLabel sizeThatFits:CGSizeMake(labelWidth, CGFLOAT_MAX)];
     CGSize computedContentSize = CGSizeMake(MAX(self.minimumSize.width, labelSize.width + kLabelPaddingLeft + kLabelPaddingRight),
                                             MAX(self.minimumSize.height, labelSize.height + kLabelPaddingTop + kLabelPaddingBottom));
     self.preferredContentSize = computedContentSize;

@@ -17,6 +17,11 @@
  */
 @interface MSXLFormValidationPopupViewController : UIViewController <MSXLFormValidationMessageViewController>
 
+/**
+ The label used for displaying the popup's message.
+ */
+@property (nonnull, nonatomic, strong, readonly) UILabel *textLabel;
+
 /** 
  The minimum size that this view controller uses for its |preferredContentSize| attribute. In general, the 
  view controller will scale so that the entire validation message fits into it, as far as possible.
