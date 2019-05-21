@@ -12,10 +12,10 @@ A small add-on for XLForm that shows a validation popup with error information o
   s.source           = { :git => 'https://github.com/mysugr/MSXLFormValidationPopup.git', :tag => s.version.to_s }
   s.social_media_url = 'https://twitter.com/mysugr'
 
-  s.ios.deployment_target = '9.3'
+  s.ios.deployment_target = '11.4'
 
   s.source_files = 'MSXLFormValidationPopup/Classes/*.{h,m}'
 
-  s.dependency 'XLForm', '3.2.0'
+  s.dependency 'XLForm', '4.0.1'
   
 end
